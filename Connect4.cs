@@ -1,0 +1,343 @@
+﻿
+using UdonSharp;
+using UnityEngine;
+using VRC.SDKBase;
+using VRC.Udon;
+
+public class Connect4 : UdonSharpBehaviour
+{
+    public PlayerRed redPlayer;
+    public PlayerYellow yellowPlayer;
+    [UdonSynced]
+    public bool inProgress = false;
+    [UdonSynced]
+    int[] materialArray = new int[42];
+    [UdonSynced]
+    bool[] activeArray = new bool[42];
+    public Material redMaterial;
+    public Material yellowMaterial;
+    public GameObject[] pieceArray = new GameObject[42];
+    private void Start()
+    {
+        Debug.LogError(41 / 6);
+        Debug.LogError(41 % 6);
+        if (Networking.IsOwner(gameObject))
+        {
+            for (int i = 0; i < materialArray.Length; i++)
+            {
+                materialArray[i] = 0;
+                activeArray[i] = false;
+            }
+            RequestSerialization();
+        }
+        UpdateBoard();
+
+    }
+    public void StartPressed()
+    {
+        SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "StartGame");
+    }
+    public void ResetPressed()
+    {
+        SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "ResetGame");
+    }
+    public void StartGame()
+    {
+        inProgress = true;
+        redPlayer.HideStart();
+        yellowPlayer.HideStart();
+        redPlayer.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.Owner, "SelectionButtons");
+        
+    }
+    public void ResetGame()
+    {
+        inProgress = false;
+        redPlayer.ResetPressed();
+        yellowPlayer.ResetPressed();
+        if (Networking.IsOwner(gameObject))
+        {
+            for (int i = 0; i < materialArray.Length; i++)
+            {
+                materialArray[i] = 0;
+                activeArray[i] = false;
+            }
+            RequestSerialization();
+            UpdateBoard();
+        }
+    }
+    public bool CheckDraw()
+    {
+        if (activeArray[5] == true &&
+            activeArray[11] == true &&
+            activeArray[17] == true &&
+            activeArray[23] == true &&
+            activeArray[35] == true &&
+            activeArray[41] == true
+            )
+            return true;
+        else
+        return false;
+    }
+    public void AddRed(int column)
+    {
+        int arrayPosition = 0;
+        bool wasValid = true;
+        Networking.SetOwner(Networking.LocalPlayer, gameObject);
+        for(int i = 0; i < 6; i++)
+        {
+            if (!activeArray[i + 6*column])
+            {
+                activeArray[i + 6*column] = true;
+                materialArray[i + 6 * column] = 1;
+                arrayPosition = i + 6 * column;
+                break;
+            }
+            if(i == 5)
+            {
+                wasValid = false;
+            }
+        }
+        if (wasValid)
+        {
+            if (CheckWinRed(arrayPosition))
+            {
+                ResetPressed();
+            }
+            else if(CheckDraw())
+            {
+                ResetPressed();
+            }
+            else
+            {
+                redPlayer.SelectionButtons();
+                UpdateBoard();
+                yellowPlayer.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.Owner, "SelectionButtons");
+                RequestSerialization();
+            }
+        }
+        
+    }
+    public override void OnDeserialization()
+    {
+        UpdateBoard();
+    }
+    public void AddYellow(int column)
+    {
+        int arrayPosition = 0;
+        bool wasValid = true;
+        Networking.SetOwner(Networking.LocalPlayer, gameObject);
+        for (int i = 0; i < 6; i++)
+        {
+            if (!activeArray[i + 6 * column])
+            {
+                activeArray[i + 6 * column] = true;
+                materialArray[i + 6 * column] = 2;
+                arrayPosition = i + 6 * column;
+
+                break;
+            }
+            if (i == 5)
+            {
+                wasValid = false;
+            }
+        }
+        if (wasValid)
+        {
+            if (CheckWinYellow(arrayPosition))
+            {
+                ResetPressed();
+            }
+            else if(CheckDraw())
+            {
+                ResetPressed();
+            }
+            else
+            {
+                yellowPlayer.SelectionButtons();
+                UpdateBoard();
+                redPlayer.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.Owner, "SelectionButtons");
+                RequestSerialization();
+            }
+        }
+    }
+    public void UpdateBoard()
+    {
+        for(int i = 0; i < pieceArray.Length; i++)
+        {
+
+            pieceArray[i].SetActive(activeArray[i]);
+            if (materialArray[i] == 2)
+            {
+                pieceArray[i].GetComponent<MeshRenderer>().material = yellowMaterial;
+            }
+            else pieceArray[i].GetComponent<MeshRenderer>().material = redMaterial;
+
+        }
+    }
+    public bool CheckWinRed(int placementPosition)
+    {
+        int count = 0;
+        //check for vertical
+        if(placementPosition % 6 > 2)
+        {
+            for(int i = 0; i <4; i++)
+            {
+                if (materialArray[placementPosition - i] == 1)
+                    count++;
+                    
+            }
+            if (count >= 4)
+                return true;
+            else
+                count = 0;
+        }
+        //check horizontal left
+        for(int i = 0; i < 4; i++)
+        {
+            if (placementPosition - (6 * i) >= 0 && materialArray[placementPosition - (6 * i)] == 1) //check for valid position
+            {
+                    count++;
+            }
+            else break;
+        }
+        //checked horizontal right skipping first piece
+        for (int i = 1; i < 4; i++)
+        {
+
+            if (placementPosition + (6 * i) <= 41 && materialArray[placementPosition + (6 * i)] == 1) //check for valid position
+            {
+                count++;
+            }
+            else break;
+        }
+        if (count >= 4)
+            return true;
+        else
+       
+
+
+        // Check top-left to bottom-right diagonal. Ai generated
+        for (int i = -3; i <= 3; i++)
+        {
+            int index = placementPosition + i * 7;
+            if (index >= 0 && index <= 41 && materialArray[index] == 1)
+            {
+                count++;
+                if (count >= 4)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                count = 0;
+            }
+        }
+
+        count = 0;
+
+        // Check top-right to bottom-left diagonal
+        for (int i = -3; i <= 3; i++)
+        {
+            int index = placementPosition + i * 5;
+            if (index >= 0 && index <= 41 && materialArray[index] == 1)
+            {
+                count++;
+                if (count >= 4)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                count = 0;
+            }
+        }
+
+
+        return false;
+
+    }
+    public bool CheckWinYellow(int placementPosition)
+    {
+        int count = 0;
+        //check for vertical
+        if (placementPosition % 6 > 2)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                if (materialArray[placementPosition - i] == 2)
+                    count++;
+
+            }
+            if (count == 4)
+                return true;
+            else
+                count = 0;
+        }
+        //check horizontal left
+        for (int i = 0; i < 4; i++)
+        {
+            if (placementPosition - (6 * i) >= 0 && materialArray[placementPosition - (6 * i)] == 2) //check for valid position
+            {
+                count++;
+            }
+            else break;
+        }
+        //checked horizontal right skipping first piece
+        for (int i = 1; i < 4; i++)
+        {
+
+            if (placementPosition + (6 * i) <= 41 && materialArray[placementPosition + (6 * i)] == 2) //check for valid position
+            {
+                count++;
+            }
+            else break;
+        }
+        if (count >= 4)
+            return true;
+        else
+            count = 0;
+        // Check top-left to bottom-right diagonal. Ai generated
+        for (int i = -3; i <= 3; i++)
+        {
+            int index = placementPosition + i * 7;
+            if (index >= 0 && index <= 41 && materialArray[index] == 2)
+            {
+                count++;
+                if (count >= 4)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                count = 0;
+            }
+        }
+
+        count = 0;
+
+        // Check top-right to bottom-left diagonal
+        for (int i = -3; i <= 3; i++)
+        {
+            int index = placementPosition + i * 5;
+            if (index >= 0 && index <= 41 && materialArray[index] == 2)
+            {
+                count++;
+                if (count >= 4)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                count = 0;
+            }
+        }
+       
+
+        return false;
+    }
+    
+}
