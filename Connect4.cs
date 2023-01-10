@@ -3,7 +3,7 @@ using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
-
+using UnityEngine.UI;
 public class Connect4 : UdonSharpBehaviour
 {
     public PlayerRed redPlayer;
@@ -17,10 +17,10 @@ public class Connect4 : UdonSharpBehaviour
     public Material redMaterial;
     public Material yellowMaterial;
     public GameObject[] pieceArray = new GameObject[42];
+    public Text winText;
     private void Start()
     {
-        Debug.LogError(41 / 6);
-        Debug.LogError(41 % 6);
+        
         if (Networking.IsOwner(gameObject))
         {
             for (int i = 0; i < materialArray.Length; i++)
@@ -43,17 +43,22 @@ public class Connect4 : UdonSharpBehaviour
     }
     public void StartGame()
     {
-        inProgress = true;
+        Networking.SetOwner(Networking.LocalPlayer, gameObject);
         redPlayer.HideStart();
         yellowPlayer.HideStart();
-        redPlayer.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.Owner, "SelectionButtons");
-        
+        if (!inProgress)
+        redPlayer.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.Owner, "EnableSelection"); //what if they start near the same time
+        inProgress = true;
+        RequestSerialization();
+
+
     }
     public void ResetGame()
     {
         inProgress = false;
         redPlayer.ResetPressed();
         yellowPlayer.ResetPressed();
+        winText.text = "";
         if (Networking.IsOwner(gameObject))
         {
             for (int i = 0; i < materialArray.Length; i++)
@@ -101,11 +106,19 @@ public class Connect4 : UdonSharpBehaviour
         {
             if (CheckWinRed(arrayPosition))
             {
-                ResetPressed();
+                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "RedWin");
+                redPlayer.SelectionButtons();
+                UpdateBoard();
+                RequestSerialization();
+
             }
             else if(CheckDraw())
             {
-                ResetPressed();
+                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "GameDraw");
+                redPlayer.SelectionButtons();
+                UpdateBoard();
+                RequestSerialization();
+
             }
             else
             {
@@ -145,11 +158,21 @@ public class Connect4 : UdonSharpBehaviour
         {
             if (CheckWinYellow(arrayPosition))
             {
-                ResetPressed();
+                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "YellowWin");
+                yellowPlayer.SelectionButtons();
+                UpdateBoard();
+                RequestSerialization();
+
+
             }
             else if(CheckDraw())
             {
-                ResetPressed();
+                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "GameDraw");
+                yellowPlayer.SelectionButtons();
+                UpdateBoard();
+                RequestSerialization();
+
+
             }
             else
             {
@@ -340,4 +363,16 @@ public class Connect4 : UdonSharpBehaviour
         return false;
     }
     
+    public void RedWin()
+    {
+        winText.text = "RED WINS";
+    }
+    public void YellowWin()
+    {
+        winText.text = "YELLOW WINS";
+    }
+    public void GameDraw()
+    {
+        winText.text = "DRAW";
+    }
 }

@@ -36,10 +36,14 @@ public class PlayerRed : UdonSharpBehaviour
     }
     public override void OnPlayerLeft(VRCPlayerApi player)
     {
-        if(playerID == player.playerId)
+        if (playerID == player.playerId)
         {
             playerID = -1;
             playerField.text = "";
+            HideStart();
+        }
+        else if (player.playerId == (int)otherPlayer.GetProgramVariable("playerID") || (int)otherPlayer.GetProgramVariable("playerID") == -1)
+        {
             HideStart();
         }
     }
@@ -67,9 +71,12 @@ public class PlayerRed : UdonSharpBehaviour
         playerField.text = Networking.GetOwner(gameObject).displayName;
     }
 
+    public void EnableSelection()
+    {
+        selectionButtons.SetActive(true);
+    }
     public void SelectionButtons()
     {
-        Debug.LogError("Inverting button");
         selectionButtons.SetActive(!selectionButtons.activeSelf);
     }
     public void ResetPressed()
