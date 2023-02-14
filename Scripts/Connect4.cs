@@ -200,8 +200,9 @@ public class Connect4 : UdonSharpBehaviour
     public bool CheckWinRed(int placementPosition)
     {
         int count = 0;
+        int height = placementPosition % 6;
         //check for vertical
-        if(placementPosition % 6 > 2)
+        if(height > 2)
         {
             for(int i = 0; i <4; i++)
             {
@@ -236,56 +237,67 @@ public class Connect4 : UdonSharpBehaviour
         if (count >= 4)
             return true;
         else
-       
+            count = 0;
 
 
-        // Check top-left to bottom-right diagonal. Ai generated
-        for (int i = -3; i <= 3; i++)
+        // Check top-left to bottom-right diagonal. 
+       for(int i = 0; i < 4; i++)
         {
-            int index = placementPosition + i * 7;
-            if (index >= 0 && index <= 41 && materialArray[index] == 1)
+            int index = placementPosition - (5 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 1 && index % 6 >= height)
             {
                 count++;
-                if (count >= 4)
-                {
-                    return true;
-                }
             }
-            else
-            {
-                count = 0;
-            }
+            else break;
+                
         }
-
-        count = 0;
-
-        // Check top-right to bottom-left diagonal
-        for (int i = -3; i <= 3; i++)
+       for(int i = 1; i <4;i++)
         {
-            int index = placementPosition + i * 5;
-            if (index >= 0 && index <= 41 && materialArray[index] == 1)
+            int index = placementPosition + (5 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 1 && index % 6 <= height)
             {
                 count++;
-                if (count >= 4)
-                {
-                    return true;
-                }
             }
-            else
+            else break;
+        }
+        if (count >= 4)
+            return true;
+        else
+            count = 0;
+
+        // Check bottom-left to top-right diagonal
+        for (int i = 0; i < 4; i++)
+        {
+            int index = placementPosition - (7 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 1 && index % 6 <= height)
             {
-                count = 0;
+                count++;
             }
+            else break;
+         }
+        for (int i = 1; i < 4; i++)
+        {
+            int index = placementPosition + (7 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 1 && index % 6 >= height)
+            {
+                count++;
+            }
+            else break;
         }
 
-
+        if (count >= 4)
+            return true;
+        else
         return false;
 
     }
     public bool CheckWinYellow(int placementPosition)
     {
         int count = 0;
+        int height = placementPosition % 6;
+
         //check for vertical
-        if (placementPosition % 6 > 2)
+        if (height > 2)
         {
             for (int i = 0; i < 4; i++)
             {
@@ -321,46 +333,55 @@ public class Connect4 : UdonSharpBehaviour
             return true;
         else
             count = 0;
-        // Check top-left to bottom-right diagonal. Ai generated
-        for (int i = -3; i <= 3; i++)
+        // Check top-left to bottom-right diagonal. 
+        for (int i = 0; i < 4; i++)
         {
-            int index = placementPosition + i * 7;
-            if (index >= 0 && index <= 41 && materialArray[index] == 2)
+            int index = placementPosition - (5 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 2 && index % 6 >= height)
             {
                 count++;
-                if (count >= 4)
-                {
-                    return true;
-                }
             }
-            else
-            {
-                count = 0;
-            }
+            else break;
+
         }
-
-        count = 0;
-
-        // Check top-right to bottom-left diagonal
-        for (int i = -3; i <= 3; i++)
+        for (int i = 1; i < 4; i++)
         {
-            int index = placementPosition + i * 5;
-            if (index >= 0 && index <= 41 && materialArray[index] == 2)
+            int index = placementPosition + (5 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 2 && index % 6 <= height)
             {
                 count++;
-                if (count >= 4)
-                {
-                    return true;
-                }
             }
-            else
-            {
-                count = 0;
-            }
+            else break;
         }
-       
+        if (count >= 4)
+            return true;
+        else
+            count = 0;
 
-        return false;
+        // Check bottom-left to top-right diagonal
+        for (int i = 0; i < 4; i++)
+        {
+            int index = placementPosition - (7 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 2 && index % 6 <= height)
+            {
+                count++;
+            }
+            else break;
+        }
+        for (int i = 1; i < 4; i++)
+        {
+            int index = placementPosition + (7 * i);
+            if (index >= 0 && index <= 41 && materialArray[index] == 2 && index % 6 >= height)
+            {
+                count++;
+            }
+            else break;
+        }
+
+        if (count >= 4)
+            return true;
+        else
+            return false;
     }
     
     public void RedWin()

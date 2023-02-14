@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: Connect4Button
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 8038c24372fcfad4ba28df3d4c26fc31,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: f49ac1ad88a3f7049a4b78551f0b457c,
     type: 2}
   udonAssembly: 
   assemblyError: 
